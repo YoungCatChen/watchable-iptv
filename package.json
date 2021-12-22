@@ -18,6 +18,9 @@
     "posttest": "npm run lint"
   },
   "dependencies": {
-    "m3u8-parser": "^4.7.0"
+    "@types/follow-redirects": "^1.13.1",
+    "follow-redirects": "^1.14.6",
+    "m3u8-parser": "^4.7.0",
+    "rxjs": "^7.4.0"
   }
 }
