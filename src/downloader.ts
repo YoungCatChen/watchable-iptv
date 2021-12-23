@@ -1,5 +1,5 @@
 import {FollowOptions, http, https} from 'follow-redirects';
-import {RequestOptions} from 'http';
+import {RequestOptions, IncomingMessage} from 'http';
 import {Observable} from 'rxjs';
 import {URL} from 'url';
 
@@ -12,10 +12,12 @@ export function download(
   const obs = new Observable<DownloadResult>(subscriber => {
     const result = new DownloadResult(url);
     let req: ReturnType<typeof http.get> | null = null;
+    let resp: IncomingMessage | null = null;
     let timeoutHandle: NodeJS.Timeout | null = null;
 
     function clearAndEmit(resultStatus: DownloadStatus, error?: Error) {
       req?.destroy();
+      resp?.destroy();
       if (timeoutHandle) clearTimeout(timeoutHandle);
       if (subscriber.closed) return;
       result.status = resultStatus;
@@ -36,7 +38,8 @@ export function download(
     };
     Object.assign(urlObj, options);
 
-    req = httpObj.get(urlObj, resp => {
+    req = httpObj.get(urlObj, response => {
+      resp = response;
       resp.on('data', (chunk: Buffer) => result.chunks.push(chunk));
       resp.on('end', () => clearAndEmit('done'));
       resp.on('error', (err: Error) => clearAndEmit('error', err));
@@ -80,7 +83,7 @@ export class DownloadResult {
 // });
 
 // download(
-//   'http://39.135.138.60:18890/PLTV/88888910/224/3221225618/1640158888-1-1639657009.hls.ts?ssr_hostlv1=39.134.116.2:18890&ssr_host=117.169.124.137:8080&tenantId=8601',
+//   'http://39.135.138.60:18890/PLTV/88888910/224/3221225618/1640222571-1-1639663375.hls.ts?ssr_hostlv1=39.134.116.2:18890&ssr_host=117.169.124.137:8080&tenantId=8601',
 //   1
 // ).subscribe(dr => {
 //   console.log(dr, dr.text.length);
