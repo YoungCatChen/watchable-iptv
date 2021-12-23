@@ -40,7 +40,8 @@ export function download(
 
     req = httpObj.get(urlObj, response => {
       resp = response;
-      resp.on('data', (chunk: Buffer) => result.chunks.push(chunk));
+      result.pushStartChunk();
+      resp.on('data', (chunk: Buffer) => result.pushChunk(chunk));
       resp.on('end', () => clearAndEmit('done'));
       resp.on('error', (err: Error) => clearAndEmit('error', err));
     });
@@ -62,17 +63,37 @@ export type DownloadStatus =
 export class DownloadResult {
   status: DownloadStatus = 'pending';
   error?: Error;
-  bytesPerSecond: number[] = [];
-  chunks: Buffer[] = [];
+  private readonly chunks: Array<{timestamp: number; chunk: Buffer}> = [];
 
   constructor(public responseUrl: string) {}
 
   get body(): Buffer {
-    return Buffer.concat(this.chunks);
+    return Buffer.concat(this.chunks.map(item => item.chunk));
   }
 
   get text(): string {
     return this.body.toString('utf-8');
+  }
+
+  get byteLength(): number {
+    return this.chunks
+      .map(item => item.chunk.byteLength)
+      .reduce((a, b) => a + b, 0);
+  }
+
+  get bytesPerSecond(): number {
+    if (this.chunks.length <= 1) return NaN;
+    const startTime = this.chunks[0].timestamp;
+    const endTime = this.chunks[this.chunks.length - 1].timestamp;
+    return (this.byteLength / (endTime - startTime)) * 1000;
+  }
+
+  pushStartChunk() {
+    this.pushChunk(Buffer.from([]));
+  }
+
+  pushChunk(chunk: Buffer) {
+    this.chunks.push({timestamp: Date.now(), chunk});
   }
 }
 
@@ -84,7 +105,7 @@ export class DownloadResult {
 
 // download(
 //   'http://39.135.138.60:18890/PLTV/88888910/224/3221225618/1640222571-1-1639663375.hls.ts?ssr_hostlv1=39.134.116.2:18890&ssr_host=117.169.124.137:8080&tenantId=8601',
-//   1
+//   5
 // ).subscribe(dr => {
-//   console.log(dr, dr.text.length);
+//   console.log(dr.byteLength, dr.bytesPerSecond, dr);
 // });
