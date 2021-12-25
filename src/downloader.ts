@@ -6,11 +6,13 @@ import {URL} from 'url';
 const USER_AGENT = 'iPlayTV/3.0.0';
 
 export function download(
-  url: string,
+  url: string | URL,
   timeout = 10
 ): Observable<DownloadResult> {
   const obs = new Observable<DownloadResult>(subscriber => {
-    const result = new DownloadResult(url);
+    if (typeof url === 'string') url = new URL(url);
+    const result = new DownloadResult(url.href);
+
     let req: ReturnType<typeof http.get> | null = null;
     let resp: IncomingMessage | null = null;
     let timeoutHandle: NodeJS.Timeout | null = null;
@@ -28,18 +30,19 @@ export function download(
 
     timeoutHandle = setTimeout(() => clearAndEmit('time-out'), timeout * 1000);
 
-    const urlObj = new URL(url);
-    const httpObj = urlObj.protocol === 'https:' ? https : http;
+    const urlCopy = new URL(url.href);
+    const httpObj = urlCopy.protocol === 'https:' ? https : http;
     const options: RequestOptions & FollowOptions<RequestOptions> = {
       followRedirects: true,
       trackRedirects: true,
       maxBodyLength: 10 * 1024 * 1024,
       headers: {'user-agent': USER_AGENT},
     };
-    Object.assign(urlObj, options);
+    Object.assign(urlCopy, options);
 
-    req = httpObj.get(urlObj, response => {
+    req = httpObj.get(urlCopy, response => {
       resp = response;
+      result.responseUrl = response.responseUrl;
       result.pushStartChunk();
       resp.on('data', (chunk: Buffer) => result.pushChunk(chunk));
       resp.on('end', () => clearAndEmit('done'));
@@ -61,11 +64,14 @@ export type DownloadStatus =
   | 'aborted';
 
 export class DownloadResult {
+  responseUrl: string;
   status: DownloadStatus = 'pending';
   error?: Error;
   private readonly chunks: Array<{timestamp: number; chunk: Buffer}> = [];
 
-  constructor(public responseUrl: string) {}
+  constructor(readonly requestUrl: string) {
+    this.responseUrl = requestUrl;
+  }
 
   get body(): Buffer {
     return Buffer.concat(this.chunks.map(item => item.chunk));
@@ -86,6 +92,17 @@ export class DownloadResult {
     const startTime = this.chunks[0].timestamp;
     const endTime = this.chunks[this.chunks.length - 1].timestamp;
     return (this.byteLength / (endTime - startTime)) * 1000;
+  }
+
+  get looksLikeText(): boolean {
+    const item = this.chunks.find(item => item.chunk.length >= 10);
+    if (!item) return false;
+    let i = 0;
+    for (const c of item.chunk) {
+      if (c > 128) return false;
+      if (++i >= 10) break;
+    }
+    return true;
   }
 
   pushStartChunk() {

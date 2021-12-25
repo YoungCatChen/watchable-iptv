@@ -10,7 +10,7 @@ export interface M3u8Channel {
   url?: URL;
 }
 
-export function parseM3u8ChannelList(
+export function parseM3u8ChannelListFile(
   text: string,
   channelListUrl: string | URL
 ): M3u8ChannelList {
@@ -56,5 +56,5 @@ export function parseM3u8ChannelList(
 // import * as fs from 'fs';
 // console.log('Will read this file:', process.argv[2]);
 // const contents = fs.readFileSync(process.argv[2], {encoding: 'utf-8'});
-// const results = parseM3u8ChannelList(contents, 'http://a/b/c');
+// const results = parseM3u8ChannelListFile(contents, 'http://a/b/c');
 // console.log(results);
