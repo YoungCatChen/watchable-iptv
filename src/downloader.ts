@@ -1,7 +1,8 @@
-import {FollowOptions, http, https} from 'follow-redirects';
-import {RequestOptions, IncomingMessage} from 'http';
+import followRedirects, {FollowOptions} from 'follow-redirects';
+import {IncomingMessage, RequestOptions} from 'http';
 import {Observable} from 'rxjs';
 import {URL} from 'url';
+const {http, https} = followRedirects;
 
 const USER_AGENT = 'iPlayTV/3.0.0';
 
@@ -11,7 +12,7 @@ export function download(
 ): Observable<DownloadResult> {
   const obs = new Observable<DownloadResult>(subscriber => {
     if (typeof url === 'string') url = new URL(url);
-    const result = new DownloadResult(url.href);
+    const result = new DownloadResult(url);
 
     let req: ReturnType<typeof http.get> | null = null;
     let resp: IncomingMessage | null = null;
@@ -28,6 +29,11 @@ export function download(
       subscriber.complete();
     }
 
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      clearAndEmit('error');
+      return;
+    }
+
     timeoutHandle = setTimeout(() => clearAndEmit('time-out'), timeout * 1000);
 
     const urlCopy = new URL(url.href);
@@ -42,8 +48,9 @@ export function download(
 
     req = httpObj.get(urlCopy, response => {
       resp = response;
-      result.responseUrl = response.responseUrl;
+      result.respUrl = new URL(response.responseUrl);
       result.pushStartChunk();
+      if ((resp.statusCode || 0) >= 400) clearAndEmit('error');
       resp.on('data', (chunk: Buffer) => result.pushChunk(chunk));
       resp.on('end', () => clearAndEmit('done'));
       resp.on('error', (err: Error) => clearAndEmit('error', err));
@@ -64,13 +71,13 @@ export type DownloadStatus =
   | 'aborted';
 
 export class DownloadResult {
-  responseUrl: string;
+  respUrl: URL;
   status: DownloadStatus = 'pending';
   error?: Error;
   private readonly chunks: Array<{timestamp: number; chunk: Buffer}> = [];
 
-  constructor(readonly requestUrl: string) {
-    this.responseUrl = requestUrl;
+  constructor(readonly reqUrl: URL) {
+    this.respUrl = reqUrl;
   }
 
   get body(): Buffer {
@@ -99,7 +106,7 @@ export class DownloadResult {
     if (!item) return false;
     let i = 0;
     for (const c of item.chunk) {
-      if (c > 128) return false;
+      if (c < 8 || c > 128) return false;
       if (++i >= 10) break;
     }
     return true;

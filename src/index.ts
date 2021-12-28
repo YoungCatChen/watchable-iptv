@@ -13,3 +13,4 @@ parser.end();
 const manifest = parser.manifest as Manifest;
 console.log('Done parsing. Results:');
 console.log(JSON.stringify(manifest, null, '  '));
+const channelListUrls = process.argv.slice(2);
