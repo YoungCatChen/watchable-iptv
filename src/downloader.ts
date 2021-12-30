@@ -2,6 +2,7 @@ import followRedirects, {FollowOptions} from 'follow-redirects';
 import {IncomingMessage, RequestOptions} from 'http';
 import {Observable} from 'rxjs';
 import {URL} from 'url';
+import {inspect} from 'util';
 const {http, https} = followRedirects;
 
 const USER_AGENT = 'iPlayTV/3.0.0';
@@ -78,6 +79,24 @@ export class DownloadResult {
 
   constructor(readonly reqUrl: URL) {
     this.respUrl = reqUrl;
+  }
+
+  /** @override */
+  toString(): String {
+    return (
+      `DownloadResult { ${this.status}` +
+      (this.error ? `:[${this.error.message}] ` : ' ') +
+      `${this.byteLength}B ${Math.round(this.bytesPerSecond / 1000)}kB/s ` +
+      `URL:[${this.reqUrl.href}]` +
+      (this.respUrl.href === this.reqUrl.href
+        ? ''
+        : `=>[${this.respUrl.href}]`) +
+      ' }'
+    );
+  }
+
+  [inspect.custom](): String {
+    return this.toString();
   }
 
   get body(): Buffer {

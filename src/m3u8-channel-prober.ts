@@ -85,6 +85,6 @@ function findFirstMediaUrl(m3u8Text: string): string | null {
   return null;
 }
 
-probeChannel('http://222.179.155.21:1935/ch2.m3u8').then(r => {
-  console.log(r);
-});
+// probeChannel('http://222.179.155.21:1935/ch2.m3u8').then(r => {
+//   console.log(r);
+// });
