@@ -13,14 +13,14 @@ export async function main(channelListUrls: string[]): Promise<void> {
   const resultFiles = getOutputFilenames(channelListUrls);
 
   console.info(
-    'Will download',
+    'Will download playlists',
     channelListUrls,
     'and will write to',
     resultFiles,
     '.'
   );
 
-  console.info('Start downloading...');
+  console.info('Start downloading playlists...');
   const channelListTextsAndUrls = await downloadPlaylists(channelListUrls);
 
   console.info(`Downloaded ${resultFiles.length} playlists. Start parsing...`);

@@ -2,6 +2,7 @@ import followRedirects, {FollowOptions} from 'follow-redirects';
 import {IncomingMessage, RequestOptions} from 'http';
 import {Observable} from 'rxjs';
 import {URL} from 'url';
+import urlToOptions from 'url-to-options';
 import {inspect} from 'util';
 const {http, https} = followRedirects;
 
@@ -38,17 +39,16 @@ export function download(
 
     timeoutHandle = setTimeout(() => clearAndEmit('time-out'), timeout * 1000);
 
-    const urlCopy = new URL(url.href);
-    const httpObj = urlCopy.protocol === 'https:' ? https : http;
+    const httpObj = url.protocol === 'https:' ? https : http;
     const options: RequestOptions & FollowOptions<RequestOptions> = {
+      ...urlToOptions(url),
       followRedirects: true,
       trackRedirects: true,
       maxBodyLength: 10 * 1024 * 1024,
       headers: {'user-agent': USER_AGENT},
     };
-    Object.assign(urlCopy, options);
 
-    req = httpObj.get(urlCopy, response => {
+    req = httpObj.get(options, response => {
       resp = response;
       result.respUrl = new URL(response.responseUrl);
       result.pushStartChunk();
@@ -146,15 +146,13 @@ export class DownloadResult {
   }
 }
 
-// download(
-//   'http://39.134.115.163:8080/PLTV/88888910/224/3221225618/index.m3u8'
-// ).subscribe(dr => {
-//   console.log(dr, dr.text.length, dr.text);
+// download('https://httpbin.org/get').subscribe(dr => {
+//   console.log(dr, dr.text);
 // });
 
 // download(
 //   'http://39.135.138.60:18890/PLTV/88888910/224/3221225618/1640222571-1-1639663375.hls.ts?ssr_hostlv1=39.134.116.2:18890&ssr_host=117.169.124.137:8080&tenantId=8601',
 //   5
 // ).subscribe(dr => {
-//   console.log(dr.byteLength, dr.bytesPerSecond, dr);
+//   console.log(dr);
 // });
