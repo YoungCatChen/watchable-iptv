@@ -10,6 +10,7 @@ export default defineConfig({
     dir: 'build',
     format: 'esm',
     sourcemap: true,
+    entryFileNames: '[name].mjs',
   },
   treeshake: true,
   plugins: [
