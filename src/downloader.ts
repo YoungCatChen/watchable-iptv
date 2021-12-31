@@ -7,6 +7,7 @@ const {http, https} = followRedirects;
 
 const USER_AGENT = 'iPlayTV/3.0.0';
 
+/** Downloads contents from a URL, following potential redirections. */
 export function download(
   url: string | URL,
   timeout = 10
@@ -72,12 +73,17 @@ export type DownloadStatus =
   | 'aborted';
 
 export class DownloadResult {
-  respUrl: URL;
   status: DownloadStatus = 'pending';
   error?: Error;
   private readonly chunks: Array<{timestamp: number; chunk: Buffer}> = [];
 
-  constructor(readonly reqUrl: URL) {
+  /** The response URL. May differ from the `reqUrl` if redirection occurs. */
+  respUrl: URL;
+
+  constructor(
+    /** The request URL. May differ from the `respUrl` if redirection occurs. */
+    readonly reqUrl: URL
+  ) {
     this.respUrl = reqUrl;
   }
 

@@ -19,6 +19,13 @@ export class ChannelProbeResult {
 
 export class HostAvailabilityMap extends Map<string, boolean> {}
 
+/**
+ * Probes a channel for watchability.
+ *
+ * @param hostAvailability A map that lives across multiple calls to
+ *    `probeChannel()`, if the caller wishes to skip repetitive probes to the
+ *    same host.
+ */
 export async function probeChannel(
   url: string | URL,
   hostAvailability?: HostAvailabilityMap
