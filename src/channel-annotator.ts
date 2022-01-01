@@ -17,7 +17,6 @@ import {M3u8Channel} from './m3u8-channel-list.js';
 /** Annotation information to be stored in a `M3u8Channel`. */
 export interface AnnotatedChannel {
   probePassed?: boolean;
-  debugProbeResult?: ChannelProbeResult;
 }
 
 /**
@@ -43,9 +42,7 @@ function annotateChannels$(
     observableDefer(() => probeChannel(channel.url!, hostAvailability)).pipe(
       tap(probeResult => {
         channel.probePassed = probeResult.passed;
-        channel.debugProbeResult = probeResult;
-        logProbeResult(channel);
-        channel.debugProbeResult = undefined;
+        logProbeResult(channel, probeResult);
       })
     )
   );
@@ -53,27 +50,29 @@ function annotateChannels$(
 }
 
 /** Logs the probe result briefly to console. */
-function logProbeResult(channel: M3u8Channel & AnnotatedChannel) {
-  if (channel.debugProbeResult?.passed) {
-    const lastDr =
-      channel.debugProbeResult.downloadResults[
-        channel.debugProbeResult.downloadResults.length - 1
-      ];
+function logProbeResult(channel: M3u8Channel, probeResult: ChannelProbeResult) {
+  const drs = probeResult.downloadResults;
+  const lastDr = drs[drs.length - 1];
+  let msg: string;
+
+  if (probeResult.previousProbePassed !== undefined) {
+    msg = 'Previously ' + (probeResult.passed ? 'good' : 'bad');
+  } else if (probeResult.passed) {
     if (lastDr) {
-      console.info(
-        Math.round(lastDr.bytesPerSecond / 1000),
-        'KB/s\t\t',
-        channel.url?.href
-      );
+      msg = `${Math.round(lastDr.bytesPerSecond / 1000)} KB/s`;
     } else {
-      console.info('Good\t\t\t', channel.url?.href);
+      msg = '(no DownloadResult)';
     }
   } else {
-    console.info(
-      ' ',
-      channel.debugProbeResult?.reason,
-      '\t',
-      channel.url?.href
-    );
+    msg = probeResult.reason || '(unknown reason)';
+    if (probeResult.reason === 'media-too-slow' && lastDr) {
+      msg += ` ${Math.round(lastDr.bytesPerSecond / 1000)} KB/s`;
+    }
   }
+
+  console.debug(
+    probeResult.passed ? '✅' : '❌',
+    msg.padEnd(25),
+    channel.url?.href
+  );
 }

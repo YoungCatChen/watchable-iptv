@@ -22,7 +22,10 @@ export function download(
     let timeoutHandle: NodeJS.Timeout | null = null;
 
     function clearAndEmit(resultStatus: DownloadStatus, error?: Error) {
-      req?.destroy();
+      // should call `req.destroy()`, but `follow-redirects` only overrided the
+      // old `abort` function and did not override the new `destroy` function.
+      req?.abort();
+
       resp?.destroy();
       if (timeoutHandle) clearTimeout(timeoutHandle);
       if (subscriber.closed) return;
@@ -50,6 +53,8 @@ export function download(
 
     req = httpObj.get(options, response => {
       resp = response;
+      result.statusCode = resp.statusCode;
+      result.statusMessage = resp.statusMessage;
       result.respUrl = new URL(response.responseUrl);
       result.pushStartChunk();
       if ((resp.statusCode || 0) >= 400) clearAndEmit('error');
@@ -74,6 +79,8 @@ export type DownloadStatus =
 
 export class DownloadResult {
   status: DownloadStatus = 'pending';
+  statusCode?: number;
+  statusMessage?: string;
   error?: Error;
   private readonly chunks: Array<{timestamp: number; chunk: Buffer}> = [];
 
@@ -90,7 +97,8 @@ export class DownloadResult {
   /** @override */
   toString(): String {
     return (
-      `DownloadResult { ${this.status}` +
+      `DownloadResult { ${this.statusCode ?? -1} ${this.statusMessage ?? ''} ` +
+      this.status +
       (this.error ? `:[${this.error.message}] ` : ' ') +
       `${this.byteLength}B ${Math.round(this.bytesPerSecond / 1000)}kB/s ` +
       `URL:[${this.reqUrl.href}]` +

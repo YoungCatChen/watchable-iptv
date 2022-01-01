@@ -37,8 +37,8 @@ export function parseM3u8ChannelListFile(
 
   for (let line of text.split(/\r?\n/)) {
     line = line.trim();
-    if (line.length === 0) continue;
-    if (line.startsWith('#EXTINF:')) {
+    if (!line) continue;
+    if (line.startsWith('#EXTINF:') || line.startsWith('#EXT-X-STREAM-INF:')) {
       isHeader = false;
       finalizeChannel();
     }

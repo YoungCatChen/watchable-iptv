@@ -5,15 +5,17 @@ import {download, DownloadResult} from './downloader.js';
 
 export class ChannelProbeResult {
   readonly downloadResults: DownloadResult[] = [];
+  previousProbePassed?: boolean;
   reason?:
     | 'playlist-has-no-media'
     | 'playlist-too-nested'
     | 'media-too-slow'
-    | 'download-error'
-    | 'previously-checked';
+    | 'download-error';
 
   get passed(): boolean {
-    return !this.reason;
+    if (this.reason) return false;
+    if (this.previousProbePassed !== undefined) return this.previousProbePassed;
+    return true;
   }
 }
 
@@ -35,29 +37,33 @@ export async function probeChannel(
   let downloadResult: DownloadResult;
 
   for (let i = 0; i < 5; ++i) {
-    if (hostAvailability?.get(url.hostname)) return probeResult;
-    if (hostAvailability?.get(url.hostname) === false) {
-      probeResult.reason = 'previously-checked';
+    const previousProbePassed = hostAvailability?.get(url.hostname);
+    if (previousProbePassed !== undefined) {
+      probeResult.previousProbePassed = previousProbePassed;
       return probeResult;
     }
 
     downloadResult = await firstValueFrom(download(url, 10));
     probeResult.downloadResults.push(downloadResult);
-    if (downloadResult.status === 'done' && downloadResult.looksLikeText) {
-      const nextUrl = findFirstMediaUrl(downloadResult.text);
-      if (!nextUrl) {
-        probeResult.reason = 'playlist-has-no-media';
-        return probeResult;
-      }
-      url = new URL(nextUrl, downloadResult.respUrl);
-    } else {
-      break;
+
+    const isPlaylist =
+      downloadResult.status === 'done' &&
+      downloadResult.byteLength > 0 &&
+      downloadResult.looksLikeText;
+
+    if (!isPlaylist) break;
+
+    const nextUrl = findFirstMediaUrl(downloadResult.text);
+    if (!nextUrl) {
+      probeResult.reason = 'playlist-has-no-media';
+      return probeResult;
     }
+    url = new URL(nextUrl, downloadResult.respUrl);
   }
 
   assert.ok(downloadResult!);
 
-  if (downloadResult.status === 'error') {
+  if (downloadResult.status === 'error' || downloadResult.byteLength === 0) {
     probeResult.reason = 'download-error';
     return probeResult;
   }
@@ -75,18 +81,20 @@ export async function probeChannel(
     (downloadResult.status === 'time-out' &&
       downloadResult.bytesPerSecond >= 100000)
   ) {
-    // do nothing.
+    hostAvailability?.set(downloadResult.reqUrl.hostname, true);
+    hostAvailability?.set(downloadResult.respUrl.hostname, true);
   } else {
     probeResult.reason = 'media-too-slow';
+    hostAvailability?.set(downloadResult.reqUrl.hostname, false);
+    hostAvailability?.set(downloadResult.respUrl.hostname, false);
   }
-  hostAvailability?.set(downloadResult.reqUrl.hostname, probeResult.passed);
-  hostAvailability?.set(downloadResult.respUrl.hostname, probeResult.passed);
   return probeResult;
 }
 
 function findFirstMediaUrl(m3u8Text: string): string | null {
   for (let line of m3u8Text.split(/\r?\n/)) {
     line = line.trim();
+    if (!line) continue;
     if (!line.startsWith('#')) return line;
   }
   return null;
