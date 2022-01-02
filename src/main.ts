@@ -77,7 +77,7 @@ function downloadPlaylist$(url: string): Observable<[string, URL]> {
   );
 }
 
-main([
-  'https://iptv-org.github.io/iptv/languages/zho.m3u',
-  'https://iptv-org.github.io/iptv/languages/zho.m3u',
-]);
+// main([
+//   'https://iptv-org.github.io/iptv/languages/zho.m3u',
+//   'https://iptv-org.github.io/iptv/languages/zho.m3u',
+// ]);
