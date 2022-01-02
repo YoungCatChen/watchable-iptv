@@ -76,6 +76,7 @@ export async function probeChannel(
 
   // When we reach here, we should have tried downloading a video file.
   // Mark as good only if download speed is high enough.
+  assert.ok(downloadResult.respUrl);
   if (
     (downloadResult.status === 'done' && downloadResult.byteLength >= 30000) ||
     (downloadResult.status === 'time-out' &&

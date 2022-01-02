@@ -45,8 +45,10 @@ export function parseM3u8ChannelListFile(
     if (isHeader) {
       headerLines.push(line);
     } else {
-      currentChannelLines.push(line);
-      if (!line.startsWith('#')) {
+      if (line.startsWith('#')) {
+        currentChannelLines.push(line);
+      } else {
+        currentChannelLines.push('{{URL}}');
         currentChannelUrl = new URL(line, channelListUrl);
       }
     }

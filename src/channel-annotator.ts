@@ -7,6 +7,7 @@ import {
   Observable,
   tap,
 } from 'rxjs';
+import {URL} from 'url';
 import {
   ChannelProbeResult,
   HostAvailabilityMap,
@@ -17,6 +18,7 @@ import {M3u8Channel} from './m3u8-channel-list.js';
 /** Annotation information to be stored in a `M3u8Channel`. */
 export interface AnnotatedChannel {
   probePassed?: boolean;
+  dereferencedUrl?: string;
 }
 
 /**
@@ -42,6 +44,7 @@ function annotateChannels$(
     observableDefer(() => probeChannel(channel.url!, hostAvailability)).pipe(
       tap(probeResult => {
         channel.probePassed = probeResult.passed;
+        channel.dereferencedUrl = dereferenceUrl(probeResult);
         logProbeResult(channel, probeResult);
       })
     )
@@ -50,7 +53,10 @@ function annotateChannels$(
 }
 
 /** Logs the probe result briefly to console. */
-function logProbeResult(channel: M3u8Channel, probeResult: ChannelProbeResult) {
+function logProbeResult(
+  channel: M3u8Channel & AnnotatedChannel,
+  probeResult: ChannelProbeResult
+) {
   const drs = probeResult.downloadResults;
   const lastDr = drs[drs.length - 1];
   let msg: string;
@@ -70,9 +76,31 @@ function logProbeResult(channel: M3u8Channel, probeResult: ChannelProbeResult) {
     }
   }
 
+  const url = channel.url?.href;
+  const derefUrl = channel.dereferencedUrl;
+
   console.debug(
     probeResult.passed ? '✅' : '❌',
     msg.padEnd(25),
-    channel.url?.href
+    url,
+    derefUrl && derefUrl !== url ? `⇒ ${derefUrl}` : ''
   );
+}
+
+function dereferenceUrl(probeResult: ChannelProbeResult): string | undefined {
+  const firstDr = probeResult.downloadResults[0];
+  if (!firstDr) return undefined;
+
+  // If there is `Location:` redirection URL, return it.
+  const redirectionUrl = firstDr.respUrl;
+  if (redirectionUrl) return redirectionUrl.href;
+
+  // If the response body is a playlist that contains only one media, return it.
+  if (firstDr.looksLikeText) {
+    const text = firstDr.text.trim();
+    if (text.startsWith('http') && text.indexOf('\n') === -1) return text;
+  }
+
+  // Can't dereference the channel URL.
+  return undefined;
 }

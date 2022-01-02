@@ -55,8 +55,13 @@ function writeChannelList(channelList: M3u8ChannelList, filepath: string) {
   const texts = [channelList.headerText];
   for (const ch of channelList.channels) {
     const channel = ch as M3u8Channel & AnnotatedChannel;
-    if (channel.probePassed) texts.push(channel.text);
+    if (channel.probePassed) texts.push(composeChannelText(channel));
   }
   texts.push('');
   fs.writeFileSync(filepath, texts.join('\n'));
+}
+
+function composeChannelText(channel: M3u8Channel & AnnotatedChannel) {
+  const url = channel.dereferencedUrl || channel.url?.href || '';
+  return channel.text.replace('{{URL}}', url);
 }

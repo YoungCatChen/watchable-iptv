@@ -85,14 +85,12 @@ export class DownloadResult {
   private readonly chunks: Array<{timestamp: number; chunk: Buffer}> = [];
 
   /** The response URL. May differ from the `reqUrl` if redirection occurs. */
-  respUrl: URL;
+  respUrl?: URL;
 
   constructor(
     /** The request URL. May differ from the `respUrl` if redirection occurs. */
     readonly reqUrl: URL
-  ) {
-    this.respUrl = reqUrl;
-  }
+  ) {}
 
   /** @override */
   toString(): String {
@@ -102,9 +100,9 @@ export class DownloadResult {
       (this.error ? `:[${this.error.message}] ` : ' ') +
       `${this.byteLength}B ${Math.round(this.bytesPerSecond / 1000)}kB/s ` +
       `URL:[${this.reqUrl.href}]` +
-      (this.respUrl.href === this.reqUrl.href
-        ? ''
-        : `=>[${this.respUrl.href}]`) +
+      (this.respUrl && this.respUrl.href !== this.reqUrl.href
+        ? `⇒[${this.respUrl.href}]`
+        : '') +
       ' }'
     );
   }

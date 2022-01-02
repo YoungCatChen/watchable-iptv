@@ -1,3 +1,4 @@
+import assert from 'assert';
 import {forkJoin, lastValueFrom, map, Observable} from 'rxjs';
 import {URL} from 'url';
 import {annotateChannels} from './channel-annotator.js';
@@ -15,7 +16,8 @@ export async function main(urls: string[]): Promise<void> {
   const processedOutputs = resultBases.map(base => base + '.p.m3u');
 
   console.info(
-    'Will download playlists',
+    new Date(),
+    ': Will download playlists',
     urls,
     'as',
     originCopies,
@@ -27,27 +29,25 @@ export async function main(urls: string[]): Promise<void> {
   console.info(`Start downloading ${urls.length} playlists...`);
   const channelListTextsAndUrls = await downloadPlaylists(urls);
 
-  console.info('Download is complete. Saving original copies...');
+  console.info('Saving original copies...');
   writeFiles(
     channelListTextsAndUrls.map(([text]) => text),
     originCopies
   );
 
-  console.info('Saved original copies. Start parsing playlists...');
+  console.info('Start parsing playlists...');
   const channelLists = channelListTextsAndUrls.map(([content, respUrl]) =>
     parseM3u8ChannelListFile(content, respUrl)
   );
   const allChannels = channelLists.map(list => list.channels).flat();
 
-  console.info(
-    `Parsed the playlists. Start probing ${allChannels.length} channels...`
-  );
+  console.info(`Start probing ${allChannels.length} channels...`);
   await annotateChannels(allChannels);
 
   console.info(`Writing ${urls.length} processed playlists to disk...`);
   writeChannelLists(channelLists, processedOutputs);
 
-  console.info('Done.');
+  console.info(new Date(), ': Done.');
 }
 
 /**
@@ -72,6 +72,7 @@ function downloadPlaylist$(url: string): Observable<[string, URL]> {
         console.debug(dr);
         throw new Error('Could not download playlist ' + url);
       }
+      assert.ok(dr.respUrl);
       return [dr.text, dr.respUrl];
     })
   );
