@@ -3,40 +3,49 @@ import {URL} from 'url';
 import {annotateChannels} from './channel-annotator.js';
 import {download} from './downloader.js';
 import {parseM3u8ChannelListFile} from './m3u8-channel-list.js';
-import {getOutputFilenames, writeChannelLists} from './write.js';
+import {getOutputFilenames, writeChannelLists, writeFiles} from './write.js';
 
 /**
  * The main function: downloads channel list files and writes processed files
  * to the current directory on disk.
  */
-export async function main(channelListUrls: string[]): Promise<void> {
-  const resultFiles = getOutputFilenames(channelListUrls);
+export async function main(urls: string[]): Promise<void> {
+  const resultBases = getOutputFilenames(urls);
+  const originCopies = resultBases.map(base => base + '.m3u');
+  const processedOutputs = resultBases.map(base => base + '.p.m3u');
 
   console.info(
     'Will download playlists',
-    channelListUrls,
-    'and will write to',
-    resultFiles,
+    urls,
+    'as',
+    originCopies,
+    'and will write processed playlists to',
+    processedOutputs,
     '.'
   );
 
-  console.info('Start downloading playlists...');
-  const channelListTextsAndUrls = await downloadPlaylists(channelListUrls);
+  console.info(`Start downloading ${urls.length} playlists...`);
+  const channelListTextsAndUrls = await downloadPlaylists(urls);
 
-  console.info(`Downloaded ${resultFiles.length} playlists. Start parsing...`);
+  console.info('Download is complete. Saving original copies...');
+  writeFiles(
+    channelListTextsAndUrls.map(([text]) => text),
+    originCopies
+  );
+
+  console.info('Saved original copies. Start parsing playlists...');
   const channelLists = channelListTextsAndUrls.map(([content, respUrl]) =>
     parseM3u8ChannelListFile(content, respUrl)
   );
   const allChannels = channelLists.map(list => list.channels).flat();
 
   console.info(
-    `Parsed ${resultFiles.length} playlists. ` +
-      `Start probing ${allChannels.length} channels...`
+    `Parsed the playlists. Start probing ${allChannels.length} channels...`
   );
   await annotateChannels(allChannels);
 
-  console.info(`Writing ${resultFiles.length} channel list files to disk...`);
-  writeChannelLists(channelLists, resultFiles);
+  console.info(`Writing ${urls.length} processed playlists to disk...`);
+  writeChannelLists(channelLists, processedOutputs);
 
   console.info('Done.');
 }
@@ -68,7 +77,7 @@ function downloadPlaylist$(url: string): Observable<[string, URL]> {
   );
 }
 
-// main([
-//   'https://iptv-org.github.io/iptv/languages/zho.m3u',
-//   'https://iptv-org.github.io/iptv/languages/zho.m3u',
-// ]);
+main([
+  'https://iptv-org.github.io/iptv/languages/zho.m3u',
+  'https://iptv-org.github.io/iptv/languages/zho.m3u',
+]);
