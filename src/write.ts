@@ -62,6 +62,6 @@ function writeChannelList(channelList: M3u8ChannelList, filepath: string) {
 }
 
 function composeChannelText(channel: M3u8Channel & AnnotatedChannel) {
-  const url = channel.dereferencedUrl || channel.url?.href || '';
+  const url = /* channel.dereferencedUrl || */ channel.url?.href || '';
   return channel.text.replace('{{URL}}', url);
 }

@@ -7,7 +7,6 @@ import {
   Observable,
   tap,
 } from 'rxjs';
-import {URL} from 'url';
 import {
   ChannelProbeResult,
   HostAvailabilityMap,
@@ -77,13 +76,13 @@ function logProbeResult(
   }
 
   const url = channel.url?.href;
-  const derefUrl = channel.dereferencedUrl;
+  // const derefUrl = channel.dereferencedUrl;
 
   console.debug(
     probeResult.passed ? '✅' : '❌',
     msg.padEnd(25),
-    url,
-    derefUrl && derefUrl !== url ? `⇒ ${derefUrl}` : ''
+    url
+    // derefUrl && derefUrl !== url ? `⇒ ${derefUrl}` : ''
   );
 }
 
