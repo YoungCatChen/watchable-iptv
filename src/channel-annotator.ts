@@ -43,7 +43,7 @@ function annotateChannels$(
     observableDefer(() => probeChannel(channel.url!, hostAvailability)).pipe(
       tap(probeResult => {
         channel.probePassed = probeResult.passed;
-        channel.dereferencedUrl = dereferenceUrl(probeResult);
+        channel.dereferencedUrl = probeResult.getDereferencedUrl();
         logProbeResult(channel, probeResult);
       })
     )
@@ -84,22 +84,4 @@ function logProbeResult(
     url
     // derefUrl && derefUrl !== url ? `⇒ ${derefUrl}` : ''
   );
-}
-
-function dereferenceUrl(probeResult: ChannelProbeResult): string | undefined {
-  const firstDr = probeResult.downloadResults[0];
-  if (!firstDr) return undefined;
-
-  // If there is `Location:` redirection URL, return it.
-  const redirectionUrl = firstDr.respUrl;
-  if (redirectionUrl) return redirectionUrl.href;
-
-  // If the response body is a playlist that contains only one media, return it.
-  if (firstDr.looksLikeText) {
-    const text = firstDr.text.trim();
-    if (text.startsWith('http') && text.indexOf('\n') === -1) return text;
-  }
-
-  // Can't dereference the channel URL.
-  return undefined;
 }

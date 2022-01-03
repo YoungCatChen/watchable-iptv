@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "array-shuffle": "^3",
+    "collections": "^5",
     "follow-redirects": "^1.13",
     "rxjs": "^7",
     "url-to-options": "^2"

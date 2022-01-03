@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import {firstValueFrom} from 'rxjs';
 import {URL} from 'url';
 import {download, DownloadResult} from './downloader.js';
+import {M3u8ChannelList2} from './m3u8-channel-list.js';
 
 export class ChannelProbeResult {
   readonly downloadResults: DownloadResult[] = [];
@@ -16,6 +17,27 @@ export class ChannelProbeResult {
     if (this.reason) return false;
     if (this.previousProbePassed !== undefined) return this.previousProbePassed;
     return true;
+  }
+
+  getDereferencedUrl(): string | undefined {
+    const firstDr = this.downloadResults[0];
+    if (!firstDr) return undefined;
+
+    // If there is `Location:` redirection URL, return it.
+    const redirectionUrl = firstDr.respUrl;
+    if (redirectionUrl) return redirectionUrl.href;
+
+    // If the response body is a playlist that contains only one media, return
+    // it.
+    if (firstDr.looksLikeText) {
+      const url = M3u8ChannelList2.findMediaUrlIfSingleTrivialMedia(
+        firstDr.text
+      );
+      if (url) return url;
+    }
+
+    // Can't dereference the channel URL.
+    return undefined;
   }
 }
 
@@ -53,7 +75,7 @@ export async function probeChannel(
 
     if (!isPlaylist) break;
 
-    const nextUrl = findFirstMediaUrl(downloadResult.text);
+    const nextUrl = M3u8ChannelList2.findFirstMediaUrl(downloadResult.text);
     if (!nextUrl) {
       probeResult.reason = 'playlist-has-no-media';
       return probeResult;
@@ -90,15 +112,6 @@ export async function probeChannel(
     hostAvailability?.set(downloadResult.respUrl.hostname, false);
   }
   return probeResult;
-}
-
-function findFirstMediaUrl(m3u8Text: string): string | null {
-  for (let line of m3u8Text.split(/\r?\n/)) {
-    line = line.trim();
-    if (!line) continue;
-    if (!line.startsWith('#')) return line;
-  }
-  return null;
 }
 
 // probeChannel('http://222.179.155.21:1935/ch2.m3u8').then(r => {

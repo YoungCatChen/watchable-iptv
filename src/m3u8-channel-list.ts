@@ -58,6 +58,23 @@ export function parseM3u8ChannelListFile(
   return {headerText: headerLines.join('\n'), channels};
 }
 
+export class M3u8ChannelList2 {
+  static findFirstMediaUrl(m3u8Text: string): string | null {
+    for (let line of m3u8Text.split(/\r?\n/)) {
+      line = line.trim();
+      if (!line) continue;
+      if (!line.startsWith('#')) return line;
+    }
+    return null;
+  }
+
+  static findMediaUrlIfSingleTrivialMedia(m3u8Text: string): string|null {
+    const text = m3u8Text.trim();
+    if (text.startsWith('http') && text.indexOf('\n') === -1) return text;
+    return null;
+  }
+}
+
 // import * as fs from 'fs';
 // console.log('Will read this file:', process.argv[2]);
 // const contents = fs.readFileSync(process.argv[2], {encoding: 'utf-8'});
