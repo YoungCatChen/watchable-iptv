@@ -7,11 +7,7 @@ import {
   Observable,
   tap,
 } from 'rxjs';
-import {
-  ChannelProbeResult,
-  HostAvailabilityMap,
-  probeChannel,
-} from './channel-prober.js';
+import {HostAvailabilityMap, probeChannel} from './channel-prober.js';
 import {M3u8Channel} from './m3u8-channel-list.js';
 
 /** Annotation information to be stored in a `M3u8Channel`. */
@@ -44,44 +40,9 @@ function annotateChannels$(
       tap(probeResult => {
         channel.probePassed = probeResult.passed;
         channel.dereferencedUrl = probeResult.getDereferencedUrl();
-        logProbeResult(channel, probeResult);
+        console.debug(probeResult.getLogMessage());
       })
     )
   );
   return observableFrom(observables).pipe(mergeAll(5));
-}
-
-/** Logs the probe result briefly to console. */
-function logProbeResult(
-  channel: M3u8Channel & AnnotatedChannel,
-  probeResult: ChannelProbeResult
-) {
-  const drs = probeResult.downloadResults;
-  const lastDr = drs[drs.length - 1];
-  let msg: string;
-
-  if (probeResult.previousProbePassed !== undefined) {
-    msg = 'Previously ' + (probeResult.passed ? 'good' : 'bad');
-  } else if (probeResult.passed) {
-    if (lastDr) {
-      msg = `${Math.round(lastDr.bytesPerSecond / 1000)} KB/s`;
-    } else {
-      msg = '(no DownloadResult)';
-    }
-  } else {
-    msg = probeResult.reason || '(unknown reason)';
-    if (probeResult.reason === 'media-too-slow' && lastDr) {
-      msg += ` ${Math.round(lastDr.bytesPerSecond / 1000)} KB/s`;
-    }
-  }
-
-  const url = channel.url?.href;
-  // const derefUrl = channel.dereferencedUrl;
-
-  console.debug(
-    probeResult.passed ? '✅' : '❌',
-    msg.padEnd(25),
-    url
-    // derefUrl && derefUrl !== url ? `⇒ ${derefUrl}` : ''
-  );
 }

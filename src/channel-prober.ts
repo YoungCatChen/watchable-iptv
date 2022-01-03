@@ -39,6 +39,38 @@ export class ChannelProbeResult {
     // Can't dereference the channel URL.
     return undefined;
   }
+
+  /** Logs the probe result briefly to console. */
+  getLogMessage(showDereferencedUrl = false): string {
+    const firstDr = this.downloadResults[0];
+    const lastDr = this.downloadResults[this.downloadResults.length - 1];
+    let msg: string;
+
+    if (this.previousProbePassed !== undefined) {
+      msg = 'Previously ' + (this.passed ? 'good' : 'bad');
+    } else if (this.passed) {
+      if (lastDr) {
+        msg = `${Math.round(lastDr.bytesPerSecond / 1000)} KB/s`;
+      } else {
+        msg = '(no DownloadResult)';
+      }
+    } else {
+      msg = this.reason || '(unknown reason)';
+      if (this.reason === 'media-too-slow' && lastDr) {
+        msg += ` ${Math.round(lastDr.bytesPerSecond / 1000)} KB/s`;
+      }
+    }
+
+    const url = firstDr?.reqUrl.href;
+    const derefUrl = showDereferencedUrl && this.getDereferencedUrl();
+
+    return (
+      (this.passed ? '✅ ' : '❌ ') +
+      msg.padEnd(25) +
+      url +
+      (derefUrl && derefUrl !== url ? ` ⇒ ${derefUrl}` : '')
+    );
+  }
 }
 
 export class HostAvailabilityMap extends Map<string, boolean> {}
