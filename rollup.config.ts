@@ -1,3 +1,5 @@
+/* eslint-disable node/no-extraneous-import */
+/* eslint-disable node/no-unpublished-import */
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';

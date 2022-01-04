@@ -68,7 +68,7 @@ export class M3u8ChannelList2 {
     return null;
   }
 
-  static findMediaUrlIfSingleTrivialMedia(m3u8Text: string): string|null {
+  static findMediaUrlIfSingleTrivialMedia(m3u8Text: string): string | null {
     const text = m3u8Text.trim();
     if (text.startsWith('http') && text.indexOf('\n') === -1) return text;
     return null;
