@@ -1,4 +1,4 @@
-import Deque from 'collections/deque.js';
+// import Deque from 'collections/deque.js';
 import {ChannelProbeResult} from './channel-prober';
 
 export interface ChannelTextComposeOptions {
@@ -8,11 +8,20 @@ export interface ChannelTextComposeOptions {
 }
 
 export class M3u8Channel {
-  static isChannelStart(line: string): boolean {
-    throw new Error();
-  }
-  static consumeAndParse(lines: string[]): M3u8Channel {
-    throw new Error();
+  static consumeAndParse(lines: string[]): M3u8Channel | null {
+    if (lines.length === 0) return null;
+    let urlWasSeen = false;
+    let i = 0;
+    for (; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const isComment = line.startsWith('#');
+      if (i !== 0 && isMediaStart(line)) break;
+      if (urlWasSeen && !isComment) break;
+      if (!isComment) urlWasSeen = true;
+    }
+    const channel = new M3u8Channel(lines, i);
+    lines.splice(0, i);
+    return channel;
   }
 
   private readonly textPattern: string;
@@ -27,6 +36,7 @@ export class M3u8Channel {
     this.channelName = '';
     this.channelGroup = '';
     this.url = '';
+    console.log('real constructor');
   }
 
   fillInProbeResult(probeResult: ChannelProbeResult): void {
@@ -51,4 +61,8 @@ export class M3u8Channel {
   }
 }
 
-console.log(Deque);
+function isMediaStart(line: string): boolean {
+  return line.startsWith('#EXTINF:') || line.startsWith('#EXT-X-STREAM-INF:');
+}
+
+// console.log(Deque);
