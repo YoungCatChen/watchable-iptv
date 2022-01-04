@@ -8,18 +8,24 @@ export interface ChannelTextComposeOptions {
 }
 
 export class M3u8Channel {
-  static consumeAndParse(lines: string[]): M3u8Channel | null {
+  static consumeAndParse(
+    lines: string[],
+    klass: typeof M3u8Channel = M3u8Channel
+  ): M3u8Channel | null {
     if (lines.length === 0) return null;
     let urlWasSeen = false;
+    const consumed = [];
     let i = 0;
     for (; i < lines.length; i++) {
       const line = lines[i].trim();
+      if (!line) continue;
       const isComment = line.startsWith('#');
       if (i !== 0 && isMediaStart(line)) break;
       if (urlWasSeen && !isComment) break;
       if (!isComment) urlWasSeen = true;
+      consumed.push(line);
     }
-    const channel = new M3u8Channel(lines, i);
+    const channel = consumed.length === 0 ? null : new klass(consumed);
     lines.splice(0, i);
     return channel;
   }
@@ -31,7 +37,7 @@ export class M3u8Channel {
   private probePassed_?: boolean;
   private dereferencedUrl_?: string;
 
-  constructor(lines: string[], length = lines.length) {
+  constructor(lines: string[]) {
     this.textPattern = '';
     this.channelName = '';
     this.channelGroup = '';
