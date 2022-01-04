@@ -3,5 +3,9 @@
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   "files.exclude": {
     "node_modules/": true
-  }
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "jest.jestCommandLine": "npx jest"
 }
