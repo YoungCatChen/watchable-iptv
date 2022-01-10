@@ -24,6 +24,15 @@ describe('M3u8Channel.consumeAndParse', () => {
     expect(ctor).toHaveBeenCalledTimes(0);
   });
 
+  it('does nothing if no url', () => {
+    const ctor = mockCtor();
+    const arr = ['#FOO', '#BAR', '#EXTINF:', '#FOZ'];
+    const result = M3u8Channel.consumeAndParse(arr, ctor);
+    expect(ctor).toHaveBeenCalledTimes(0);
+    expect(result).toBeNull();
+    expect(arr).toEqual([]);
+  });
+
   it('consumes a channel', () => {
     const ctor = mockCtor();
     const arr = ['http://a'];
@@ -36,12 +45,12 @@ describe('M3u8Channel.consumeAndParse', () => {
 
   it('consumes a channel with comments', () => {
     const ctor = mockCtor();
-    const arr = ['#FOO', 'http://a', '#BAR'];
+    const arr = ['#FOO', 'http://a', '#BAR', 'http://b'];
     const result = M3u8Channel.consumeAndParse(arr, ctor);
     expect(ctor).toHaveBeenCalledTimes(1);
     expect(ctor).toHaveBeenCalledWith(['#FOO', 'http://a', '#BAR']);
     expect(result).toBeTruthy();
-    expect(arr).toEqual([]);
+    expect(arr).toEqual(['http://b']);
   });
 
   it('trims spaces', () => {
@@ -64,14 +73,13 @@ describe('M3u8Channel.consumeAndParse', () => {
     expect(arr).toEqual(['http://b', 'http://c']);
   });
 
-  // needs rethink.
   it('stops at a media start after a url', () => {
     const ctor = mockCtor();
-    const arr = ['#AAA', '#EXTINF:', 'http://a', '#BBB', '#EXTINF:'];
+    const arr = ['#AA', '#EXTINF:', 'http://a', '#BB', '#EXTINF:', 'http://b'];
     const result = M3u8Channel.consumeAndParse(arr, ctor);
     expect(ctor).toHaveBeenCalledTimes(1);
-    expect(ctor).toHaveBeenCalledWith(['#AAA', '#EXTINF:', 'http://a', '#BBB']);
+    expect(ctor).toHaveBeenCalledWith(['#AA', '#EXTINF:', 'http://a', '#BB']);
     expect(result).toBeTruthy();
-    expect(arr).toEqual(['#EXTINF:']);
+    expect(arr).toEqual(['#EXTINF:', 'http://b']);
   });
 });

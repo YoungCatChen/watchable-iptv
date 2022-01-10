@@ -20,12 +20,11 @@ export class M3u8Channel {
       const line = lines[i].trim();
       if (!line) continue;
       const isComment = line.startsWith('#');
-      if (i !== 0 && isMediaStart(line)) break;
-      if (urlWasSeen && !isComment) break;
+      if (urlWasSeen && (!isComment || isMediaStart(line))) break;
       if (!isComment) urlWasSeen = true;
       consumed.push(line);
     }
-    const channel = consumed.length === 0 ? null : new klass(consumed);
+    const channel = urlWasSeen ? new klass(consumed) : null;
     lines.splice(0, i);
     return channel;
   }
