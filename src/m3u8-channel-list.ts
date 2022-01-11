@@ -1,4 +1,9 @@
 import {URL} from 'url';
+import {
+  isM3uComment,
+  isMediaStart,
+  M3u8Channel as M3u8Channel2,
+} from './m3u8-channel.js';
 
 /** Represents a channel list, usually as a playlist file. */
 export interface M3u8ChannelList {
@@ -72,6 +77,38 @@ export class M3u8ChannelList2 {
     const text = m3u8Text.trim();
     if (text.startsWith('http') && text.indexOf('\n') === -1) return text;
     return null;
+  }
+
+  static parse(lines: string[]): M3u8ChannelList2 {
+    let i = 0;
+    for (; i < lines.length; i++) {
+      const line = lines[i];
+      if (isMediaStart(line) || !isM3uComment(line)) break;
+    }
+
+    const headerText = lines.slice(0, i).join('\n');
+    const mediaLines = lines.slice(i);
+
+    const channels: M3u8Channel2[] = [];
+    let channel: M3u8Channel2 | null = null;
+
+    do {
+      channel = M3u8Channel2.consumeAndParse(mediaLines);
+      if (channel) channels.push(channel);
+    } while (channel);
+
+    return new M3u8ChannelList2(headerText, channels);
+  }
+
+  constructor(readonly headerText: string, readonly channels: M3u8Channel2[]) {}
+  playlistUrl_?: string | URL;
+
+  get playlistUrl(): string | URL | undefined {
+    return this.playlistUrl_;
+  }
+  set playlistUrl(url: string | URL | undefined) {
+    this.playlistUrl_ = url;
+    for (const ch of this.channels) ch.parentPlaylistUrl = url;
   }
 }
 

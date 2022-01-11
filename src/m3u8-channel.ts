@@ -1,6 +1,19 @@
-// import Deque from 'collections/deque.js';
 import assert from 'assert';
-import {ChannelProbeResult} from './channel-prober';
+import {URL} from 'url';
+import {ChannelProbeResult} from './channel-prober.js';
+
+/** Determines if a line of text is a comment, as opposed to a URL. */
+export function isM3uComment(line: string): boolean {
+  return line.startsWith('#');
+}
+
+/**
+ * Determines if a line of comment text indicates the start of a media in an
+ * m3u playlist.
+ */
+export function isMediaStart(line: string): boolean {
+  return line.startsWith('#EXTINF:') || line.startsWith('#EXT-X-STREAM-INF:');
+}
 
 export interface ChannelTextComposeOptions {
   channelName?: string;
@@ -8,7 +21,21 @@ export interface ChannelTextComposeOptions {
   useDereferencedUrl?: boolean;
 }
 
+/** Represents a media channel in an m3u playlist. */
 export class M3u8Channel {
+  /**
+   * Consumes the first few `lines` of text and creates an `M3u8Channel` object.
+   *
+   * @param lines An array for lines of texts. The first (few) element(s) in the
+   *    input array `lines` will be consumed (removed) for the first channel.
+   *    Caller may call this function again with the same array object to
+   *    get the second channel.
+   *
+   * @param klass The `M3u8Channel` class. Only useful for testing.
+   *
+   * @returns An `M3u8Channel` object, if it finds a media URL from the text
+   *    lines. Otherwise null.
+   */
   static consumeAndParse(
     lines: string[],
     klass: typeof M3u8Channel = M3u8Channel
@@ -20,7 +47,7 @@ export class M3u8Channel {
     for (; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      const isComment = line.startsWith('#');
+      const isComment = isM3uComment(line);
       if (urlWasSeen && (!isComment || isMediaStart(line))) break;
       if (!isComment) urlWasSeen = true;
       consumed.push(line);
@@ -30,6 +57,7 @@ export class M3u8Channel {
     return channel;
   }
 
+  public parentPlaylistUrl?: string | URL;
   protected readonly textPattern_: string;
   private channelName_ = '';
   private channelGroup_ = '';
@@ -67,7 +95,7 @@ export class M3u8Channel {
     lines: string[]
   ) {
     for (let i = 0; i < lines.length; i++) {
-      if (!lines[i].startsWith('#')) {
+      if (!isM3uComment(lines[i])) {
         this.url_ = lines[i];
         lines[i] = '{{URL}}';
       }
@@ -101,9 +129,3 @@ export class M3u8Channel {
       .replace('{{GROUP}}', options?.channelGroup || this.channelGroup_);
   }
 }
-
-function isMediaStart(line: string): boolean {
-  return line.startsWith('#EXTINF:') || line.startsWith('#EXT-X-STREAM-INF:');
-}
-
-// console.log(Deque);

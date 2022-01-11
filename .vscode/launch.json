@@ -13,7 +13,7 @@
         "${workspaceFolder}/node_modules/rxjs/**/*.js"
       ],
       "program": "${file}",
-      "preLaunchTask": "tsc: build - tsconfig.json",
+      "preLaunchTask": "npm: compile",
       "outFiles": [
         "${workspaceFolder}/build/**/*.js"
       ]
