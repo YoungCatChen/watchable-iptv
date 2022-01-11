@@ -7,12 +7,20 @@ export function isM3uComment(line: string): boolean {
   return line.startsWith('#');
 }
 
+/** Determines if a line of text is a URL, as opposed to a comment. */
+export function isMediaUrl(line: string): boolean {
+  return !!line && !line.startsWith('#');
+}
+
 /**
  * Determines if a line of comment text indicates the start of a media in an
  * m3u playlist.
  */
 export function isMediaStart(line: string): boolean {
-  return line.startsWith('#EXTINF:') || line.startsWith('#EXT-X-STREAM-INF:');
+  return (
+    !!line &&
+    (line.startsWith('#EXTINF:') || line.startsWith('#EXT-X-STREAM-INF:'))
+  );
 }
 
 export interface ChannelTextComposeOptions {
@@ -95,7 +103,7 @@ export class M3u8Channel {
     lines: string[]
   ) {
     for (let i = 0; i < lines.length; i++) {
-      if (!isM3uComment(lines[i])) {
+      if (isMediaUrl(lines[i])) {
         this.url_ = lines[i];
         lines[i] = '{{URL}}';
       }

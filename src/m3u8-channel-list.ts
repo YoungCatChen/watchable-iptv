@@ -1,7 +1,7 @@
 import {URL} from 'url';
 import {
-  isM3uComment,
   isMediaStart,
+  isMediaUrl,
   M3u8Channel as M3u8Channel2,
 } from './m3u8-channel.js';
 
@@ -63,12 +63,12 @@ export function parseM3u8ChannelListFile(
   return {headerText: headerLines.join('\n'), channels};
 }
 
+/** Represents a channel list, usually as a playlist file. */
 export class M3u8ChannelList2 {
   static findFirstMediaUrl(m3u8Text: string): string | null {
     for (let line of m3u8Text.split(/\r?\n/)) {
       line = line.trim();
-      if (!line) continue;
-      if (!line.startsWith('#')) return line;
+      if (isMediaUrl(line)) return line;
     }
     return null;
   }
@@ -79,11 +79,14 @@ export class M3u8ChannelList2 {
     return null;
   }
 
-  static parse(lines: string[]): M3u8ChannelList2 {
+  /** Parses a m3u file into an `M3u8ChannelList2` object. */
+  static parse(text: string): M3u8ChannelList2 {
+    const lines = text.split(/\r?\n/).map(s => s.trim());
+
     let i = 0;
     for (; i < lines.length; i++) {
       const line = lines[i];
-      if (isMediaStart(line) || !isM3uComment(line)) break;
+      if (isMediaStart(line) || isMediaUrl(line)) break;
     }
 
     const headerText = lines.slice(0, i).join('\n');
