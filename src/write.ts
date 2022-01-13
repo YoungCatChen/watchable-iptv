@@ -2,8 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import {URL} from 'url';
-import {AnnotatedChannel} from './channel-annotator.js';
-import {M3u8Channel, M3u8ChannelList} from './m3u8-channel-list.js';
+import {M3u8ChannelList} from './m3u8-channel-list.js';
 
 /**
  * Gets output filenames for processed playlist files, according to their URLs.
@@ -54,14 +53,18 @@ export function writeChannelLists(
 function writeChannelList(channelList: M3u8ChannelList, filepath: string) {
   const texts = [channelList.headerText];
   for (const ch of channelList.channels) {
-    const channel = ch as M3u8Channel & AnnotatedChannel;
-    if (channel.probePassed) texts.push(composeChannelText(channel));
+    if (ch.probePassed) {
+      texts.push(ch.composeText({useDereferencedUrl: false}));
+    } else {
+      texts.push(
+        ch.composeText({
+          useDereferencedUrl: false,
+          channelName: '❌' + ch.channelName,
+          channelGroup: '❌' + ch.channelGroup,
+        })
+      );
+    }
   }
   texts.push('');
   fs.writeFileSync(filepath, texts.join('\n'));
-}
-
-function composeChannelText(channel: M3u8Channel & AnnotatedChannel) {
-  const url = /* channel.dereferencedUrl || */ channel.url?.href || '';
-  return channel.text.replace('{{URL}}', url);
 }

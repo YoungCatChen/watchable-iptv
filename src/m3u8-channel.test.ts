@@ -153,7 +153,7 @@ describe('M3u8Channel.composeText()', () => {
 
 describe('M3u8Channel.composeText() and fillInProbeResult()', () => {
   it('respect dereferenced url', () => {
-    const probeResult = new ChannelProbeResult();
+    const probeResult = new ChannelProbeResult('http://dont-care');
     jest.spyOn(probeResult, 'getDereferencedUrl').mockReturnValue('http://b');
     const ch = new M3u8Channel(['#EXTINF:0,BTV-1', 'http://a']);
     ch.fillInProbeResult(probeResult);

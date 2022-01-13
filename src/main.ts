@@ -3,7 +3,7 @@ import {forkJoin, lastValueFrom, map, Observable} from 'rxjs';
 import {URL} from 'url';
 import {annotateChannels} from './channel-annotator.js';
 import {download} from './downloader.js';
-import {parseM3u8ChannelListFile} from './m3u8-channel-list.js';
+import {M3u8ChannelList} from './m3u8-channel-list.js';
 import {getOutputFilenames, writeChannelLists, writeFiles} from './write.js';
 
 /**
@@ -36,9 +36,11 @@ export async function main(urls: string[]): Promise<void> {
   );
 
   console.info('Start parsing playlists...');
-  const channelLists = channelListTextsAndUrls.map(([content, respUrl]) =>
-    parseM3u8ChannelListFile(content, respUrl)
-  );
+  const channelLists = channelListTextsAndUrls.map(([content, respUrl]) => {
+    const cl = M3u8ChannelList.parse(content);
+    cl.playlistUrl = respUrl;
+    return cl;
+  });
   const allChannels = channelLists.map(list => list.channels).flat();
 
   console.info(`Start probing ${allChannels.length} channels...`);

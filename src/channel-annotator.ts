@@ -8,13 +8,7 @@ import {
   tap,
 } from 'rxjs';
 import {HostAvailabilityMap, probeChannel} from './channel-prober.js';
-import {M3u8Channel} from './m3u8-channel-list.js';
-
-/** Annotation information to be stored in a `M3u8Channel`. */
-export interface AnnotatedChannel {
-  probePassed?: boolean;
-  dereferencedUrl?: string;
-}
+import {M3u8Channel} from './m3u8-channel.js';
 
 /**
  * Probes each channel's watchability and attaches annotation as properties in
@@ -29,17 +23,14 @@ export async function annotateChannels(channels: M3u8Channel[]): Promise<{}> {
 }
 
 /** Internal implementation with Observables of `annotateChannels()`. */
-function annotateChannels$(
-  channels: Array<M3u8Channel & AnnotatedChannel>
-): Observable<{}> {
+function annotateChannels$(channels: M3u8Channel[]): Observable<{}> {
   channels = channels.filter(channel => !!channel.url);
   channels = arrayShuffle(channels);
   const hostAvailability = new HostAvailabilityMap();
   const observables = channels.map(channel =>
-    observableDefer(() => probeChannel(channel.url!, hostAvailability)).pipe(
+    observableDefer(() => probeChannel(channel.url, hostAvailability)).pipe(
       tap(probeResult => {
-        channel.probePassed = probeResult.passed;
-        channel.dereferencedUrl = probeResult.getDereferencedUrl();
+        channel.fillInProbeResult(probeResult);
         console.debug(probeResult.getLogMessage());
       })
     )

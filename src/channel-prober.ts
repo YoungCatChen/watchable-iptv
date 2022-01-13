@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {firstValueFrom} from 'rxjs';
 import {URL} from 'url';
 import {download, DownloadResult} from './downloader.js';
-import {M3u8ChannelList2} from './m3u8-channel-list.js';
+import {M3u8ChannelList} from './m3u8-channel-list.js';
 
 export class ChannelProbeResult {
   readonly downloadResults: DownloadResult[] = [];
@@ -12,6 +12,8 @@ export class ChannelProbeResult {
     | 'playlist-too-nested'
     | 'media-too-slow'
     | 'download-error';
+
+  constructor(readonly channelUrl: string) {}
 
   get passed(): boolean {
     if (this.reason) return false;
@@ -30,7 +32,7 @@ export class ChannelProbeResult {
     // If the response body is a playlist that contains only one media, return
     // it.
     if (firstDr.looksLikeText) {
-      const url = M3u8ChannelList2.findMediaUrlIfSingleTrivialMedia(
+      const url = M3u8ChannelList.findMediaUrlIfSingleTrivialMedia(
         firstDr.text
       );
       if (url) return url;
@@ -42,7 +44,6 @@ export class ChannelProbeResult {
 
   /** Logs the probe result briefly to console. */
   getLogMessage(showDereferencedUrl = false): string {
-    const firstDr = this.downloadResults[0];
     const lastDr = this.downloadResults[this.downloadResults.length - 1];
     let msg: string;
 
@@ -61,7 +62,7 @@ export class ChannelProbeResult {
       }
     }
 
-    const url = firstDr?.reqUrl.href;
+    const url = this.channelUrl;
     const derefUrl = showDereferencedUrl && this.getDereferencedUrl();
 
     return (
@@ -87,7 +88,7 @@ export async function probeChannel(
   hostAvailability?: HostAvailabilityMap
 ): Promise<ChannelProbeResult> {
   if (typeof url === 'string') url = new URL(url);
-  const probeResult = new ChannelProbeResult();
+  const probeResult = new ChannelProbeResult(url.href);
   let downloadResult: DownloadResult;
 
   for (let i = 0; i < 5; ++i) {
@@ -107,7 +108,7 @@ export async function probeChannel(
 
     if (!isPlaylist) break;
 
-    const nextUrl = M3u8ChannelList2.findFirstMediaUrl(downloadResult.text);
+    const nextUrl = M3u8ChannelList.findFirstMediaUrl(downloadResult.text);
     if (!nextUrl) {
       probeResult.reason = 'playlist-has-no-media';
       return probeResult;
