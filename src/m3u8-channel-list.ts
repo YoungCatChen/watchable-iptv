@@ -17,7 +17,7 @@ export class M3u8ChannelList {
     return null;
   }
 
-  /** Parses a m3u file into an `M3u8ChannelList2` object. */
+  /** Parses a m3u file into an `M3u8ChannelList` object. */
   static parse(text: string): M3u8ChannelList {
     const lines = text.split(/\r?\n/).map(s => s.trim());
 
@@ -28,20 +28,21 @@ export class M3u8ChannelList {
     }
 
     const headerText = lines.slice(0, i).join('\n');
-    const mediaLines = lines.slice(i);
+    const result = new M3u8ChannelList(headerText);
 
-    const channels: M3u8Channel[] = [];
+    const mediaLines = lines.slice(i);
     let channel: M3u8Channel | null = null;
 
     do {
       channel = M3u8Channel.consumeAndParse(mediaLines);
-      if (channel) channels.push(channel);
+      if (channel) result.channels.push(channel);
     } while (channel);
 
-    return new M3u8ChannelList(headerText, channels);
+    return result;
   }
 
-  constructor(readonly headerText: string, readonly channels: M3u8Channel[]) {}
+  constructor(readonly headerText: string) {}
+  readonly channels: M3u8Channel[] = [];
   private playlistUrl_?: string | URL;
 
   get playlistUrl(): string | URL | undefined {
@@ -51,6 +52,31 @@ export class M3u8ChannelList {
     this.playlistUrl_ = url;
     for (const ch of this.channels) ch.parentPlaylistUrl = url;
   }
+
+  composeText(options?: ChannelListTextComposeOptions): string {
+    const texts = [this.headerText];
+    for (const ch of this.channels) {
+      texts.push(
+        ch.composeText({
+          useDereferencedUrl: options?.useDereferencedUrl,
+          channelName: options?.channelNameFn
+            ? options.channelNameFn(ch)
+            : undefined,
+          channelGroup: options?.channelGroupFn
+            ? options.channelGroupFn(ch)
+            : undefined,
+        })
+      );
+    }
+    texts.push('');
+    return texts.join('\n');
+  }
+}
+
+export interface ChannelListTextComposeOptions {
+  channelNameFn?: (channel: M3u8Channel) => string;
+  channelGroupFn?: (channel: M3u8Channel) => string;
+  useDereferencedUrl?: boolean;
 }
 
 // import * as fs from 'fs';

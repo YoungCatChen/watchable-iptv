@@ -51,20 +51,10 @@ export function writeChannelLists(
 }
 
 function writeChannelList(channelList: M3u8ChannelList, filepath: string) {
-  const texts = [channelList.headerText];
-  for (const ch of channelList.channels) {
-    if (ch.probePassed) {
-      texts.push(ch.composeText({useDereferencedUrl: false}));
-    } else {
-      texts.push(
-        ch.composeText({
-          useDereferencedUrl: false,
-          channelName: '❌' + ch.channelName,
-          channelGroup: '❌' + ch.channelGroup,
-        })
-      );
-    }
-  }
-  texts.push('');
-  fs.writeFileSync(filepath, texts.join('\n'));
+  const text = channelList.composeText({
+    useDereferencedUrl: false,
+    channelNameFn: ch => (ch.probePassed ? '' : '❌') + ch.channelName,
+    channelGroupFn: ch => (ch.probePassed ? '' : '❌') + ch.channelGroup,
+  });
+  fs.writeFileSync(filepath, text);
 }

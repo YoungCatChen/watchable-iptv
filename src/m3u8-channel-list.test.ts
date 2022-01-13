@@ -1,6 +1,8 @@
+import {jest} from '@jest/globals';
 import {M3u8ChannelList} from './m3u8-channel-list.js';
+import {ChannelTextComposeOptions, M3u8Channel} from './m3u8-channel.js';
 
-describe('M3u8ChannelList2.parse()', () => {
+describe('M3u8ChannelList.parse()', () => {
   it('parses m3u text format', () => {
     const cl = M3u8ChannelList.parse(`#EXTM3U
 #EXTINF:-1,CCTV
@@ -68,5 +70,32 @@ http://a`);
     expect(cl.channels).toHaveLength(1);
     expect(cl.channels[0].channelName).toEqual('CCTV');
     expect(cl.channels[0].url).toEqual('http://a');
+  });
+});
+
+describe('M3u8ChannelList.composeText()', () => {
+  const cl = new M3u8ChannelList('#EXTM3U');
+  const ch = new M3u8Channel(['http://a']);
+  const mockFn = jest.spyOn(ch, 'composeText').mockReturnValue('http://b');
+  cl.channels.push(ch);
+
+  beforeEach(() => mockFn.mockClear());
+
+  it('keeps empty options as default', () => {
+    cl.composeText();
+    expect(mockFn).toHaveBeenCalledWith({});
+  });
+
+  it('respects options', () => {
+    cl.composeText({
+      useDereferencedUrl: true,
+      channelNameFn: () => 'NAME',
+      channelGroupFn: () => 'GROUP',
+    });
+    expect(mockFn).toHaveBeenCalledWith({
+      useDereferencedUrl: true,
+      channelName: 'NAME',
+      channelGroup: 'GROUP',
+    } as ChannelTextComposeOptions);
   });
 });
