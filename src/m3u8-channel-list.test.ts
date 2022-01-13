@@ -82,8 +82,9 @@ describe('M3u8ChannelList.composeText()', () => {
   beforeEach(() => mockFn.mockClear());
 
   it('keeps empty options as default', () => {
-    cl.composeText();
+    const text = cl.composeText();
     expect(mockFn).toHaveBeenCalledWith({});
+    expect(text).toEqual('#EXTM3U\nhttp://b\n');
   });
 
   it('respects options', () => {
