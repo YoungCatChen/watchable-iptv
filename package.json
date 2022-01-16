@@ -1,6 +1,6 @@
 {
   "name": "watchable-iptv",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "lint": "gts lint",
