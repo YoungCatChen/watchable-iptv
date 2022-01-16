@@ -20,7 +20,7 @@
       "type": "pwa-node",
       "request": "launch",
       "name": "Test (Jest)",
-      "outputCapture": "std",
+      "console": "integratedTerminal",
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceFolder}/node_modules/@jest/**/*.js",

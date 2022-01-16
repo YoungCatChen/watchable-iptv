@@ -134,9 +134,9 @@ export class DownloadResult {
 
   get looksLikeText(): boolean {
     const item = this.chunks.find(item => item.chunk.length >= 10);
-    if (!item) return false;
+    const chunk = item ? item.chunk : this.body;
     let i = 0;
-    for (const c of item.chunk) {
+    for (const c of chunk) {
       if (c < 8 || c > 128) return false;
       if (++i >= 10) break;
     }
