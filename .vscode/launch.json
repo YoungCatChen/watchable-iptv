@@ -7,16 +7,35 @@
     {
       "type": "pwa-node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Run",
+      "outputCapture": "std",
       "skipFiles": [
         "<node_internals>/**",
-        "${workspaceFolder}/node_modules/rxjs/**/*.js"
+        "${workspaceFolder}/node_modules/rxjs/**/*.js",
       ],
       "program": "${file}",
       "preLaunchTask": "npm: compile",
-      "outFiles": [
-        "${workspaceFolder}/build/**/*.js"
-      ]
-    }
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Test (Jest)",
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/@jest/**/*.js",
+        "${workspaceFolder}/node_modules/jest*/**/*.js",
+        "${workspaceFolder}/node_modules/rxjs/**/*.js",
+        "${workspaceFolder}/node_modules/throat/**/*.js",
+      ],
+      "env": {
+        "NODE_OPTIONS": "--experimental-vm-modules",
+      },
+      "program": "${workspaceRoot}/node_modules/.bin/jest",
+      "args": [
+        "${relativeFileDirname}/${fileBasenameNoExtension}.js"
+      ],
+      "preLaunchTask": "npm: compile",
+    },
   ]
 }
