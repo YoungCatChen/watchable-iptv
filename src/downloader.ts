@@ -36,7 +36,10 @@ export function download(
     }
 
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      clearAndEmit('error');
+      clearAndEmit(
+        'error',
+        new TypeError('Unsupported protocol ' + url.protocol)
+      );
       return;
     }
 
