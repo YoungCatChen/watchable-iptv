@@ -75,25 +75,40 @@ http://a`);
 
 describe('M3u8ChannelList.composeText()', () => {
   const cl = new M3u8ChannelList('#EXTM3U');
-  const ch = new M3u8Channel(['http://a']);
-  const mockFn = jest.spyOn(ch, 'composeText').mockReturnValue('http://b');
-  cl.channels.push(ch);
+  const ch1 = new M3u8Channel(['http://dont-care']);
+  const ch2 = new M3u8Channel(['http://dont-care']);
+  const spiedFn1 = jest.spyOn(ch1, 'composeText').mockReturnValue('http://ch1');
+  const spiedFn2 = jest.spyOn(ch2, 'composeText').mockReturnValue('http://ch2');
+  jest.spyOn(ch1, 'probePassed', 'get').mockReturnValue(false);
+  jest.spyOn(ch2, 'probePassed', 'get').mockReturnValue(true);
 
-  beforeEach(() => mockFn.mockClear());
-
-  it('keeps empty options as default', () => {
-    const text = cl.composeText();
-    expect(mockFn).toHaveBeenCalledWith({});
-    expect(text).toEqual('#EXTM3U\nhttp://b\n');
+  beforeEach(() => {
+    jest.clearAllMocks();
+    cl.channels.splice(0); // remove all elements from the array
   });
 
-  it('respects options', () => {
+  it('keeps empty options as default', () => {
+    cl.channels.push(ch1, ch2);
+    const text = cl.composeText();
+    expect(spiedFn1).toHaveBeenCalledWith({});
+    expect(spiedFn2).toHaveBeenCalledWith({});
+    expect(text).toEqual('#EXTM3U\nhttp://ch1\nhttp://ch2\n');
+  });
+
+  it('can put bad channels at last', () => {
+    cl.channels.push(ch1, ch2);
+    const text = cl.composeText({badChannelsAtLast: true});
+    expect(text).toEqual('#EXTM3U\nhttp://ch2\nhttp://ch1\n');
+  });
+
+  it('passes through options', () => {
+    cl.channels.push(ch1);
     cl.composeText({
       useDereferencedUrl: true,
       channelNameFn: () => 'NAME',
       channelGroupFn: () => 'GROUP',
     });
-    expect(mockFn).toHaveBeenCalledWith({
+    expect(spiedFn1).toHaveBeenCalledWith({
       useDereferencedUrl: true,
       channelName: 'NAME',
       channelGroup: 'GROUP',

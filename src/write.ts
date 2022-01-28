@@ -52,6 +52,7 @@ export function writeChannelLists(
 
 function writeChannelList(channelList: M3u8ChannelList, filepath: string) {
   const text = channelList.composeText({
+    badChannelsAtLast: true,
     useDereferencedUrl: false,
     channelNameFn: ch => (ch.probePassed ? '' : '❌') + ch.channelName,
     channelGroupFn: ch => (ch.probePassed ? '' : '❌') + ch.channelGroup,

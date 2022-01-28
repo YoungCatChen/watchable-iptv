@@ -54,9 +54,13 @@ export class M3u8ChannelList {
   }
 
   composeText(options?: ChannelListTextComposeOptions): string {
-    const texts = [this.headerText];
+    let texts = [this.headerText];
+    const badChannelTexts: string[] = [];
+
     for (const ch of this.channels) {
-      texts.push(
+      const targetArray =
+        options?.badChannelsAtLast && !ch.probePassed ? badChannelTexts : texts;
+      targetArray.push(
         ch.composeText({
           useDereferencedUrl: options?.useDereferencedUrl,
           channelName: options?.channelNameFn
@@ -68,6 +72,7 @@ export class M3u8ChannelList {
         })
       );
     }
+    texts = texts.concat(badChannelTexts);
     texts.push('');
     return texts.join('\n');
   }
@@ -77,6 +82,7 @@ export interface ChannelListTextComposeOptions {
   channelNameFn?: (channel: M3u8Channel) => string;
   channelGroupFn?: (channel: M3u8Channel) => string;
   useDereferencedUrl?: boolean;
+  badChannelsAtLast?: boolean;
 }
 
 // import * as fs from 'fs';
